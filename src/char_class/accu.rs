@@ -1,9 +1,14 @@
-use std::{collections::HashSet, any::TypeId};
-
-use super::GenAccumulator;
+use std::collections::HashSet;
+use super::{Collector, Emitter};
 
 pub struct Accumulator {
     set: HashSet<char>,
+}
+
+impl ToString for Accumulator {
+    fn to_string(&self) -> String {
+        String::from_iter(self.set.iter())
+    }
 }
 
 impl Accumulator {
@@ -13,19 +18,18 @@ impl Accumulator {
         }
     }
 
-	pub fn do_take_in<T>(&mut self, a_iterable: impl IntoIterator<Item = T>) where Self: super::GenAccumulator<T> {
-		self.take_in(a_iterable)
-	}
-}
-
-impl super::GenAccumulator<char> for Accumulator {
-    fn take_in(&mut self, a_iterable: impl IntoIterator<Item = char>) {
-        self.set.extend(a_iterable);
+    pub fn collect<T>(&mut self, a_emitter: &impl Emitter<T>) where Self: Collector<T> {
+        self.collect_worker(a_emitter);
     }
 }
 
-impl<'a> super::GenAccumulator<&'a char> for Accumulator {
-    fn take_in(&mut self, a_iterable: impl IntoIterator<Item = &'a char>) {
-        self.set.extend(a_iterable);
+impl Collector<char> for Accumulator {
+    fn collect_worker(&mut self, a_emitter: &impl Emitter<char>) {
+        self.set.extend(a_emitter.emit());
+    }
+}
+impl<'a> Collector<&'a char> for Accumulator {
+    fn collect_worker(&mut self, a_emitter: &impl Emitter<&'a char>) {
+        self.set.extend(a_emitter.emit());
     }
 }

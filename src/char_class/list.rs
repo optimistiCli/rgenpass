@@ -1,12 +1,12 @@
 use rand::seq::SliceRandom;
-use super::CharClass;
+use super::{CharClass, Emitter};
 
 pub struct ListCharClass<'a> {
     list: &'a [char],
 }
 
-impl<'a> super::RefIterable<'a> for ListCharClass<'a> {
-    fn get_ref_iter(&self) -> impl IntoIterator<Item = &'a char> {
+impl<'a> Emitter<&'a char> for ListCharClass<'a> {
+    fn emit(&self) -> impl IntoIterator<Item = &'a char> {
         self.list.into_iter()
     }
 }
@@ -29,12 +29,3 @@ impl CharClass for ListCharClass<'_> {
         self.list.into_iter()
     }
 }
-
-// impl<'a> IntoIterator for ListCharClass<'a> {
-//     type Item = <&'a [char] as IntoIterator>::Item;
-//     type IntoIter = <&'a [char] as IntoIterator>::IntoIter;
-
-//     fn into_iter(self) -> Self::IntoIter {
-//         self.list.into_iter()
-//     }
-// }

@@ -1,6 +1,5 @@
-use super::CharClass;
-use std::ops::RangeInclusive;
 use rand::distributions::{Uniform, Distribution};
+use super::{CharClass, Emitter};
 
 pub struct IntervalCharClass {
     distr: Uniform<char>,
@@ -26,21 +25,6 @@ impl IntervalCharClass {
     }
 }
 
-impl super::CharIterable for IntervalCharClass {
-    fn get_char_iter(&self) -> impl IntoIterator<Item = char> {
-        (self.from..=self.to).into_iter()
-    }
-}
-
-// impl IntoIterator for IntervalCharClass {
-//     type Item = char;
-//     type IntoIter = RangeInclusive<Self::Item>;
-
-//     fn into_iter(self) -> Self::IntoIter {
-//         (self.from..=self.to).into_iter()
-//     }
-// }
-
 impl CharClass for IntervalCharClass {
     fn get_char(&self) -> char {
         let mut rng = rand::thread_rng();
@@ -48,6 +32,12 @@ impl CharClass for IntervalCharClass {
     }
 
     fn get_iter(&self) -> impl IntoIterator {
+        (self.from..=self.to).into_iter()
+    }
+}
+
+impl Emitter<char> for IntervalCharClass {
+    fn emit(&self) -> impl IntoIterator<Item = char> {
         (self.from..=self.to).into_iter()
     }
 }
