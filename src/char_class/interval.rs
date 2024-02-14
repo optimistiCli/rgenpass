@@ -1,5 +1,5 @@
 use rand::distributions::{Uniform, Distribution};
-use super::{CharClass, Emitter};
+use super::CharClass;
 
 pub struct IntervalCharClass {
     distr: Uniform<char>,
@@ -25,19 +25,35 @@ impl IntervalCharClass {
     }
 }
 
-impl CharClass for IntervalCharClass {
-    fn get_char(&self) -> char {
+impl Iterator for IntervalCharClass {
+    type Item = char;
+
+    fn next(&mut self) -> Option<Self::Item> {
         let mut rng = rand::thread_rng();
-        self.distr.sample(&mut rng)
+        Some(self.distr.sample(&mut rng))
     }
+}
 
-    fn get_iter(&self) -> impl IntoIterator {
+impl CharClass for IntervalCharClass {
+    fn chars(&self) -> impl Iterator<Item = char> {
         (self.from..=self.to).into_iter()
     }
 }
 
-impl Emitter<char> for IntervalCharClass {
-    fn emit(&self) -> impl IntoIterator<Item = char> {
-        (self.from..=self.to).into_iter()
-    }
-}
+
+// impl CharClass for IntervalCharClass {
+//     fn get_char(&self) -> char {
+//         let mut rng = rand::thread_rng();
+//         self.distr.sample(&mut rng)
+//     }
+
+//     fn get_iter(&self) -> impl IntoIterator {
+//         (self.from..=self.to).into_iter()
+//     }
+// }
+
+// impl Emitter<char> for IntervalCharClass {
+//     fn emit(&self) -> impl IntoIterator<Item = char> {
+//         (self.from..=self.to).into_iter()
+//     }
+// }

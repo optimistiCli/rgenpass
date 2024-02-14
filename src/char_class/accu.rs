@@ -1,5 +1,6 @@
 use std::collections::HashSet;
-use super::{Collector, Emitter};
+use super::CharClass;
+use super::array::ArrayCharClass;
 
 pub struct Accumulator {
     set: HashSet<char>,
@@ -18,24 +19,11 @@ impl Accumulator {
         }
     }
 
-    pub fn collect<T>(&mut self, a_emitter: &impl Emitter<T>) where Self: Collector<T> {
-        self.collect_worker(a_emitter);
+    pub fn collect_from(&mut self, a_char_class: &impl CharClass) {
+        self.set.extend(a_char_class.chars());
     }
 
-    // fn oo1(&self) -> Box<[char]> {
-    //     let oo2 = Vec::from_iter(self.set.iter().cloned());
-    //     let oo3: &[char] = &oo2;
-    //     Box::new(oo3)
-    // }
-}
-
-impl Collector<char> for Accumulator {
-    fn collect_worker(&mut self, a_emitter: &impl Emitter<char>) {
-        self.set.extend(a_emitter.emit());
-    }
-}
-impl<'a> Collector<&'a char> for Accumulator {
-    fn collect_worker(&mut self, a_emitter: &impl Emitter<&'a char>) {
-        self.set.extend(a_emitter.emit());
+    pub fn cook_char_class(&self) -> ArrayCharClass {
+        ArrayCharClass::from_exact_size_iter(self.set.iter())
     }
 }
