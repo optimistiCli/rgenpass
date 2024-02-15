@@ -30,10 +30,6 @@ impl ArrayCharClass {
             array: cook_boxed_array(a_iter.cloned(), len),
         }
     }
-
-    pub fn from_str(a_str: &str) -> ArrayCharClass {
-        Self::from_exact_size_iter(a_str.chars().collect::<Vec<char>>().iter())
-    }
 }
 
 impl Iterator for ArrayCharClass {
@@ -46,7 +42,7 @@ impl Iterator for ArrayCharClass {
 }
 
 impl CharClass for ArrayCharClass {
-    fn chars(&self) -> impl Iterator<Item = char> {
-        self.array.iter().cloned()
+    fn chars(&self) -> Box<dyn Iterator<Item = char> + '_> {
+        Box::new(self.array.iter().cloned())
     }
 }

@@ -35,25 +35,7 @@ impl Iterator for IntervalCharClass {
 }
 
 impl CharClass for IntervalCharClass {
-    fn chars(&self) -> impl Iterator<Item = char> {
-        (self.from..=self.to).into_iter()
+    fn chars(&self) -> Box<dyn Iterator<Item = char>> {
+        Box::new((self.from..=self.to).into_iter())
     }
 }
-
-
-// impl CharClass for IntervalCharClass {
-//     fn get_char(&self) -> char {
-//         let mut rng = rand::thread_rng();
-//         self.distr.sample(&mut rng)
-//     }
-
-//     fn get_iter(&self) -> impl IntoIterator {
-//         (self.from..=self.to).into_iter()
-//     }
-// }
-
-// impl Emitter<char> for IntervalCharClass {
-//     fn emit(&self) -> impl IntoIterator<Item = char> {
-//         (self.from..=self.to).into_iter()
-//     }
-// }

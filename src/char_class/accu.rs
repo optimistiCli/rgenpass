@@ -19,7 +19,7 @@ impl Accumulator {
         }
     }
 
-    pub fn collect_from(&mut self, a_char_class: &impl CharClass) {
+    pub fn collect_from(&mut self, a_char_class: &Box<dyn CharClass>) {
         self.set.extend(a_char_class.chars());
     }
 
