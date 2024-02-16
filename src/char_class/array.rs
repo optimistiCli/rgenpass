@@ -1,23 +1,6 @@
 use rand::seq::SliceRandom;
+use iwrtb::BoxedArray;
 use super::CharClass;
-
-fn cook_boxed_array<T: Clone>(
-        a_iter: impl Iterator<Item = T>,
-        a_len: usize,
-        ) -> Box<[T]> {
-    let mut boxed_array = unsafe {
-        let layout = std::alloc::Layout::array::<T>(a_len).expect("Can't allocate memory");
-        let ptr = std::alloc::alloc_zeroed(layout) as *mut usize;
-        let slice = std::ptr::slice_from_raw_parts_mut(ptr, a_len) as *mut [T];
-        Box::from_raw(slice)
-    };
-
-    for (i, item) in a_iter.take(a_len).enumerate() {
-        boxed_array[i] = item;
-    }
-
-    boxed_array
-}
 
 pub struct ArrayCharClass {
     array: Box<[char]>,
@@ -27,7 +10,7 @@ impl ArrayCharClass {
     pub fn from_exact_size_iter<'a>(a_iter: impl ExactSizeIterator<Item = &'a char>) -> ArrayCharClass {
         let len = a_iter.len();
         ArrayCharClass {
-            array: cook_boxed_array(a_iter.cloned(), len),
+            array: Box::array_from_iter_and_len(a_iter.cloned(), len),
         }
     }
 }
