@@ -7,4 +7,7 @@ edition = "2021"
 
 [dependencies]
 rand = "0.8.5"
-iwrtb = { path = "../iwrtb" }
+#argh = "0.1.12"
+# https://github.com/google/argh/pull/53
+argh = { path = "../arghish/argh" }
+iwrtb = { path = "../iwrtb/iwrtb" }
