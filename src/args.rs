@@ -1,10 +1,10 @@
-use argh::FromArgs;
+use argh::{FromArgs, TopLevelCommand};
 use iwrtb::uniq;
 
 #[allow(dead_code)]
 #[derive(FromArgs, Debug)]
 /// Generates random password(s). Default is 16 chars of capital, lowercase letters and digits.
-#[argh(help_triggers("-h", "--help"))] 
+#[argh(help_triggers("-h", "--help"), verbose_error)] 
 pub struct Args {
     #[argh(switch, short = 'l')]
     /// use lower case letters (default)
@@ -90,38 +90,38 @@ const DEFAULTS: Requset = Requset {
 };
 
 impl Args {
-    pub fn check(&self) -> Result<Requset, &'static str> {
+    pub fn check(&self) -> Requset {
         if self.lower && self.no_lower {
-            return Err("Lower case letters both enabled and disabled")
+            self.report_error_and_exit("Lower case letters both enabled and disabled")
         }
         if self.upper && self.no_upper {
-            return Err("Upper case letters both enabled and disabled")
+            self.report_error_and_exit("Upper case letters both enabled and disabled")
         }
         if self.digits && self.no_digits {
-            return Err("Digits both enabled and disabled")
+            self.report_error_and_exit("Digits both enabled and disabled")
         }
         if self.special && self.no_special {
-            return Err("Special characters both enabled and disabled")
+            self.report_error_and_exit("Special characters both enabled and disabled")
         }
         if let Some(num) = self.num {
             if num < 1 {
-                return Err("Too few passwords requested")
+                self.report_error_and_exit("Too few passwords requested")
             }
         }
         if let Some(length) = self.length {
             if length < 1 {
-                return Err("Too short a passwords requested")
+                self.report_error_and_exit("Too short a passwords requested")
             }
         }
 
         if let Some(replacement) = &self.replacement {
             if replacement.len() < 1 {
-                return Err("Empty replacement special characters list")
+                self.report_error_and_exit("Empty replacement special characters list")
             }
         }
         for extra in &self.extra {
             if extra.len() < 1 {
-                return Err("Empty extra special characters list")
+                self.report_error_and_exit("Empty extra special characters list")
             }
         }
         let req = Requset{
@@ -135,9 +135,9 @@ impl Args {
             length: if let Some(length) = self.length { length } else { DEFAULTS.length },
         };
         if !req.lower && !req.upper && !req.digits && req.special.is_none() {
-            return Err("All character classes are off")
+            self.report_error_and_exit("All character classes are off")
         }
-        Ok(req)
+        req
     }
 
     fn combine_special(&self) -> Option<String> {
