@@ -1,0 +1,8 @@
+[package]
+name = "genpass"
+version = "1.0.0"
+edition = "2021"
+
+[dependencies]
+rand = "0.8.5"
+argh = { git = "https://github.com/optimistiCli/arghish.git", tag = "helptext" }
