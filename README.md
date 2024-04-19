@@ -27,3 +27,4 @@ Options:
   -h, --help        display usage information
 ```
 
+It is a rust rewrite of an old [shell script](https://github.com/optimistiCli/genpass).
