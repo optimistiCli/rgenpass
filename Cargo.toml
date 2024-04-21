@@ -1,7 +1,18 @@
 [package]
-name = "genpass"
-version = "1.0.0"
+name = "iwgenpass"
 edition = "2021"
+version = "0.1.1"
+authors = ["Ish West <optimistcli@yahoo.com>"]
+description = "Generates random password(s). Default is 16 chars of capital, lowercase letters and digits."
+documentation = "https://github.com/optimistiCli/rgenpass/blob/main/README.md"
+repository = "https://github.com/optimistiCli/rgenpass"
+categories = ["command-line-utilities"]
+license = "MIT"
+keywords = ["cli", "password"]
+
+[[bin]]
+name = "genpass"
+path = "src/main.rs"
 
 [dependencies]
 rand = "0.8.5"

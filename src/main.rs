@@ -1,7 +1,7 @@
 use std::iter::repeat;
 
 use argh::TopLevelCommand;
-use genpass::GenPass;
+use iwgenpass::GenPass;
 
 mod args;
 use args::Args;

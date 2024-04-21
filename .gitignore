@@ -3,3 +3,4 @@ Cargo.lock
 .vscode
 src/ttt.rs
 *.code-workspace
+.DS_Store
