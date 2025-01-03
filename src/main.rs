@@ -1,17 +1,12 @@
 use std::iter::repeat;
-use iwrtb::Braggard;
 
 use iwgenpass::GenPass;
 
 mod args;
-use args::Args;
+use args::Requset;
 
 fn main() {
-    let args: Args = argh::from_env();
-    let usage = args.usage.clone().unwrap();
-    let brg = Braggard::new(&usage);
-
-    let req = args.check();
+    let req = Requset::new();
     let mut gp = GenPass::new();
     if req.digits {
         gp.add_interval('0', '9');
@@ -22,7 +17,7 @@ fn main() {
     if req.upper {
         gp.add_interval('A', 'Z');
     }
-    if let Some(special) = req.special {
+    if let Some(ref special) = req.special {
         gp.add_list(&special);
     }
 
@@ -39,7 +34,7 @@ fn main() {
                 }
                 .unwrap_or_else(
                     |msg| {
-                        brg.brag_and_exit(&msg);
+                        req.brag_and_exit(&msg);
                         String::new()
                     }
                 )
