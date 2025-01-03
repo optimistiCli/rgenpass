@@ -1,13 +1,19 @@
 [package]
-name = "genpass"
-version = "0.1.0"
+name = "iwgenpass"
 edition = "2021"
+version = "1.0.0"
+authors = ["Ish West <optimistcli@yahoo.com>"]
+description = "Generates random password(s). Default is 16 chars of capital, lowercase letters and digits."
+documentation = "https://github.com/optimistiCli/rgenpass/blob/main/README.md"
+repository = "https://github.com/optimistiCli/rgenpass"
+categories = ["command-line-utilities"]
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[[bin]]
+name = "genpass"
+path = "src/main.rs"
 
 [dependencies]
 rand = "0.8.5"
-#argh = "0.1.12"
-# https://github.com/google/argh/pull/53
 argh = { path = "../arghish/argh" }
 iwrtb = { path = "../iwrtb/iwrtb" }
+clap = { version = "4.5.23", features = ["cargo"] }

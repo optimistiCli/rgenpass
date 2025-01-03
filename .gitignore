@@ -2,3 +2,4 @@ Cargo.lock
 /target
 .vscode
 src/ttt.rs
+.DS_Store

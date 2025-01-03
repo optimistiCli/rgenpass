@@ -1,7 +1,7 @@
 use std::iter::repeat;
 use iwrtb::Braggard;
 
-use genpass::GenPass;
+use iwgenpass::GenPass;
 
 mod args;
 use args::Args;
