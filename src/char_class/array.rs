@@ -1,16 +1,17 @@
 use rand::seq::SliceRandom;
-use iwrtb::BoxedArray;
 use super::CharClass;
 
 pub struct ArrayCharClass {
-    array: Box<[char]>,
+    array: Vec<char>,
 }
 
 impl ArrayCharClass {
     pub fn from_exact_size_iter<'a>(a_iter: impl ExactSizeIterator<Item = &'a char>) -> ArrayCharClass {
         let len = a_iter.len();
+        let mut array = Vec::with_capacity(len);
+        array.extend(a_iter);
         ArrayCharClass {
-            array: Box::array_from_iter_and_len(a_iter.cloned(), len),
+            array,
         }
     }
 }

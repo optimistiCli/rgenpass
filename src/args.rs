@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use clap::{
     command, 
     arg, 
@@ -9,7 +10,6 @@ use clap::{
     error::ErrorKind, 
 };
 use clap_cargo::style::NOP;
-use iwrtb::uniq;
 
 const DEFAULT_LOWER: bool = true;
 const DEFAULT_UPPER: bool = true;
@@ -43,6 +43,12 @@ pub struct Requset {
 }
 
 impl Requset {
+    fn uniq(a_in: &str) -> String {
+        let mut set: HashSet<char> = HashSet::new();
+        set.extend(a_in.chars());
+        String::from_iter(set.iter())
+    }
+
     fn get_dual_bool_match(a_matches: &ArgMatches, a_id: &str, a_default: &bool) -> bool {
         *a_matches.get_one::<bool>(a_id).unwrap() 
         || if *a_matches.get_one::<bool>(&format!("no_{a_id}")).unwrap() 
@@ -66,7 +72,7 @@ impl Requset {
         if *a_matches.get_one::<bool>("no_special").unwrap() {
             None
         } else if let Some(replacement) = a_matches.get_one::<String>("replacement") {
-            Some(uniq(replacement))
+            Some(Self::uniq(replacement))
         } else if let Some(extra) = a_matches.get_many::<String>("extra") {
             let mut combined = String::from(DEFAULT_SPECIALS);
             combined.extend(
@@ -74,7 +80,7 @@ impl Requset {
                         |s| 
                             s.chars())
                 .flatten());
-            Some(uniq(&combined))
+            Some(Self::uniq(&combined))
         } else if *a_matches.get_one::<bool>("special").unwrap() {
             Some(DEFAULT_SPECIALS.to_owned())
         } else {
