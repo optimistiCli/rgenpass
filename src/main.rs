@@ -42,6 +42,7 @@ fn main() {
         )
         .collect::<Vec<_>>()
         .join("\n");
+    // TODO: Print trailing newline only if writing to a terminal
     println!("{}", passwords)
 
     // let mut gp = GenPass::new();

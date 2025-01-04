@@ -6,14 +6,10 @@ use clap::{
     ArgMatches, 
     builder::styling::Styles, 
     Error,
-    error::{
-        ContextKind, 
-        ContextValue, 
-        ErrorKind
-    }, 
+    error::ErrorKind, 
 };
 use clap_cargo::style::NOP;
-use iwrtb::{uniq, Braggard};
+use iwrtb::uniq;
 
 const DEFAULT_LOWER: bool = true;
 const DEFAULT_UPPER: bool = true;
@@ -41,9 +37,9 @@ pub struct Requset {
     pub special: Option<String>,
     pub all: bool,
     pub num: usize,
-    pub quiet: bool,
+    pub quiet: bool, // TODO: Implement verbose output
     pub length: usize,
-    pub usage: String,
+    pub err: Error,
 }
 
 impl Requset {
@@ -88,8 +84,10 @@ impl Requset {
     
     pub fn new() -> Self {
         let mut cmd = command!()
-            .name(
-                env!("CARGO_BIN_NAME")) // Workaround for render_help bug
+            // TODO: Report bug
+            // .name(
+            //     env!("CARGO_BIN_NAME")) // Workaround for render_help bug
+            .disable_version_flag(true)
             .arg(arg!(lower: -l "Use lower case letters (default)")
                 .action(ArgAction::SetTrue)
                 .group("low"))
@@ -126,7 +124,7 @@ impl Requset {
                 .default_value(DEFAULT_NUM)
                 .value_parser(value_parser!(u8)
                 .range(1..128)))
-            .arg(arg!(quiet: -q "Do not output anything but the password(s)")
+            .arg(arg!(quiet: -q "Quiet output, doesn't affect anithing as of yet") // Do not output anything but the password(s)
                 .action(ArgAction::SetTrue))
             .arg(arg!(length: <length> "Password length")
                 .default_value(DEFAULT_LENGTH)
@@ -142,20 +140,17 @@ impl Requset {
                 .valid(NOP)
                 .header(NOP))
             .help_template("\
-                {before-help}{about}\n\n\
-                {usage-heading}\n  {usage}\n\n\
+                {before-help}\
+                {usage-heading}{usage}\n\n\
+                {about}\n\n\
                 {all-args}{after-help}")
-            // .override_usage("[-l | -L]")
+            .override_usage(format!(
+                "\n  {} [-h] [-l | -L] [-u | -U] [-d | -D] [-s | -S | -r <chars> | -x <chars>] [-a] [-n <num>] [-q] [length]",
+                env!("CARGO_BIN_NAME"),
+                ))
             ;
-            let help = cmd.render_help().ansi().to_string();
-
-            let mut err = Error::new(ErrorKind::ValueValidation).with_cmd(&cmd);
-            err.insert(ContextKind::InvalidArg, ContextValue::String("--foo".to_owned()));
-            err.insert(ContextKind::InvalidValue, ContextValue::String("bar".to_owned()));
-            println!(">>>\n{}\n<<<", err);
-
-            let matches = cmd.get_matches();
-
+        let err = cmd.error(ErrorKind::ArgumentConflict, "{}");
+        let matches = cmd.get_matches();
         let req = Requset{
             lower: Self::get_dual_bool_match(&matches, "lower", &DEFAULT_LOWER),
             upper: Self::get_dual_bool_match(&matches, "upper", &DEFAULT_UPPER),
@@ -169,7 +164,7 @@ impl Requset {
             length: usize::from(Self::get_single_match::<u8>(
                 &matches, "length",
                 &DEFAULT_LENGTH.parse::<u8>().unwrap())),
-            usage: help,
+            err: err,
         };
         if !req.lower && !req.upper && !req.digits && req.special.is_none() {
             req.brag_and_exit("All character classes are off");
@@ -178,7 +173,7 @@ impl Requset {
     }
 
     pub fn brag_and_exit(&self, a_msg: &str) {
-        Braggard::new(&self.usage)
-            .brag_and_exit(a_msg);
+        eprint!("{}", self.err.render().to_string().replace("{}", a_msg));
+        std::process::exit(1);
     }
 }
