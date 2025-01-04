@@ -1,7 +1,7 @@
 [package]
 name = "iwgenpass"
 edition = "2021"
-version = "0.1.1"
+version = "1.0.0"
 authors = ["Ish West <optimistcli@yahoo.com>"]
 description = "Generates random password(s). Default is 16 chars of capital, lowercase letters and digits."
 documentation = "https://github.com/optimistiCli/rgenpass/blob/main/README.md"
@@ -16,4 +16,5 @@ path = "src/main.rs"
 
 [dependencies]
 rand = "0.8.5"
-argh = { git = "https://github.com/optimistiCli/arghish.git", tag = "helptext" }
+clap = { version = "4.5.23", features = ["cargo"] }
+clap-cargo = "0.14.1"

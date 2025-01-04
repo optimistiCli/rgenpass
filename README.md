@@ -1,30 +1,28 @@
 # Password generator
 
+Generates random password(s). Default is 16 chars of capital, lowercase letters and digits.
+
+## Usage
 ```
-Usage: genpass [<length>] [-l] [-L] [-u] [-U] [-d] [-D] [-s] [-S]
-               [-x <extra...>] [-r <replacement>] [-a] [-n <num>] [-q]
-
-Generates random password(s). Default is 16 chars of capital, lowercase
-letters and digits.
-
-Positional Arguments:
-  length
-
-Options:
-  -l, --lower       use lower case letters (default)
-  -L, --no-lower    do NOT use lower case letters
-  -u, --upper       use upper case letters (default)
-  -U, --no-upper    do NOT use upper case letters
-  -d, --digits      use digits (default)
-  -D, --no-digits   do NOT use digits
-  -s, --special     use special characters !$%@#
-  -S, --no-special  do NOT use special characters (default)
-  -x, --extra       extra special characters, implies -s
-  -r, --replacement replacement special characters, implies -s
-  -a, --all         password must conain chars of all classes
-  -n, --num         generate number of passwords (default is 1)
-  -q, --quiet       do not output anything but the password(s)
-  -h, --help        display usage information
+genpass [-h] [-l | -L] [-u | -U] [-d | -D] [-s | -S | -r <chars> | -x <chars>]
+        [-a] [-n <num>] [-q] [length]
 ```
 
+## Options And Arguments
+* `-l` – Use lower case letters (default)
+* `-L` – Do NOT use lower case letters
+* `-u` – Use upper case letters (default)
+* `-U` – Do NOT use upper case letters
+* `-d` – Use digits (default)
+* `-D` – Do NOT use digits
+* `-s` – Use special characters `!$%@#`
+* `-S` – Do NOT use special characters
+* `-x <chars>` – Extra special characters, implies -s
+* `-r <chars>` – Replacement special characters, implies -s
+* `-a` – Password must conain chars of all classes
+* `-n <num>` – Generate number of passwords, 1 if ommited
+* `-q` – Quiet output, doesn't affect anithing as of yet
+* `[length]` – Password length, 16 if ommited.
+
+## History
 It is a rust rewrite of an old [shell script](https://github.com/optimistiCli/genpass).

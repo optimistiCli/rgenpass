@@ -1,68 +1,33 @@
 use std::collections::HashSet;
-use argh::{FromArgs, TopLevelCommand};
+use clap::{
+    command, 
+    arg, 
+    value_parser, 
+    ArgAction, 
+    ArgMatches, 
+    builder::styling::Styles, 
+    Error,
+    error::ErrorKind, 
+};
+use clap_cargo::style::NOP;
 
-// #[allow(dead_code)]
-#[derive(FromArgs, Debug)]
-/// Generates random password(s). Default is 16 chars of capital, lowercase letters and digits.
-#[argh(help_triggers("-h", "--help"), verbose_error)] 
-pub struct Args {
-    #[argh(switch, short = 'l')]
-    /// use lower case letters (default)
-    pub lower: bool,
+const DEFAULT_LOWER: bool = true;
+const DEFAULT_UPPER: bool = true;
+const DEFAULT_DIGITS: bool = true;
+const DEFAULT_SPECIALS: &str = "!$%@#";
+const DEFAULT_ALL: bool = false;
+const DEFAULT_NUM: &str = "1";
+const DEFAULT_QUIET: bool = false;
+const DEFAULT_LENGTH: &str = "16";
 
-    #[argh(switch, short = 'L')]
-    /// do NOT use lower case letters
-    pub no_lower: bool,
-
-    #[argh(switch, short = 'u')]
-    /// use upper case letters (default)
-    pub upper: bool,
-
-    #[argh(switch, short = 'U')]
-    /// do NOT use upper case letters
-    pub no_upper: bool,
-
-    #[argh(switch, short = 'd')]
-    /// use digits (default)
-    pub digits: bool,
-
-    #[argh(switch, short = 'D')]
-    /// do NOT use digits
-    pub no_digits: bool,
-
-    #[argh(switch, short = 's')]
-    /// use special characters !$%@#
-    pub special: bool,
-
-    #[argh(switch, short = 'S')]
-    /// do NOT use special characters (default)
-    pub no_special: bool,
-
-    #[argh(option, short = 'x')]
-    /// extra special characters, implies -s
-    pub extra: Vec<String>,
-
-    #[argh(option, short = 'r')]
-    /// replacement special characters, implies -s
-    pub replacement: Option<String>,
-
-    #[argh(switch, short = 'a')]
-    /// password must conain chars of all classes
-    pub all: bool,
-
-    #[argh(option, short = 'n')]
-    /// generate number of passwords (default is 1)
-    pub num: Option<usize>,
-
-    #[argh(switch, short = 'q')]
-    /// do not output anything but the password(s)
-    pub quiet: bool,
-
-    #[argh(positional)]
-    pub length: Option<usize>,
-
-    #[argh(help_text)]
-    pub usage: Option<String>,
+macro_rules! no_empty_strings {
+    ($m_str:expr) => {
+        |s: &str|
+            if s.len() > 0
+                { Ok(s.to_owned()) }
+            else
+                { Err($m_str)}
+    };
 }
 
 pub struct Requset {
@@ -72,102 +37,149 @@ pub struct Requset {
     pub special: Option<String>,
     pub all: bool,
     pub num: usize,
-    pub quiet: bool,
+    pub quiet: bool, // TODO: Implement verbose output
     pub length: usize,
+    pub err: Error,
 }
 
-const DEFAULT_SPECIALS: &str = "!$%@#";
+impl Requset {
+    fn uniq(a_in: &str) -> String {
+        let mut set: HashSet<char> = HashSet::new();
+        set.extend(a_in.chars());
+        String::from_iter(set.iter())
+    }
 
-const DEFAULTS: Requset = Requset {
-    lower: true,
-    upper: true,
-    digits: true,
-    special: None,
-    all: false,
-    num: 1,
-    quiet: false,
-    length: 16,
-};
-
-pub fn uniq(a_in: String) -> String {
-    let mut set: HashSet<char> = HashSet::new();
-    set.extend(a_in.chars());
-    String::from_iter(set.iter())
-}
-
-impl Args {
-    pub fn check(&self) -> Requset {
-        if self.lower && self.no_lower {
-            self.report_error_and_exit("Lower case letters both enabled and disabled")
+    fn get_dual_bool_match(a_matches: &ArgMatches, a_id: &str, a_default: &bool) -> bool {
+        *a_matches.get_one::<bool>(a_id).unwrap() 
+        || if *a_matches.get_one::<bool>(&format!("no_{a_id}")).unwrap() 
+            { false } 
+        else 
+            { *a_default }
+    }
+    
+    fn get_single_match<T: Clone + Send + Sync + 'static>(
+            a_matches: &ArgMatches, 
+            a_id: &str, 
+            a_default: &T,
+        ) -> T {
+        if let Some(num) = a_matches.get_one::<T>(a_id)
+            { num.clone() } 
+        else 
+            { a_default.clone() }
+    }
+    
+    fn combine_special(a_matches: &ArgMatches) -> Option<String> {
+        if *a_matches.get_one::<bool>("no_special").unwrap() {
+            None
+        } else if let Some(replacement) = a_matches.get_one::<String>("replacement") {
+            Some(Self::uniq(replacement))
+        } else if let Some(extra) = a_matches.get_many::<String>("extra") {
+            let mut combined = String::from(DEFAULT_SPECIALS);
+            combined.extend(
+                    extra.map(
+                        |s| 
+                            s.chars())
+                .flatten());
+            Some(Self::uniq(&combined))
+        } else if *a_matches.get_one::<bool>("special").unwrap() {
+            Some(DEFAULT_SPECIALS.to_owned())
+        } else {
+            None
         }
-        if self.upper && self.no_upper {
-            self.report_error_and_exit("Upper case letters both enabled and disabled")
-        }
-        if self.digits && self.no_digits {
-            self.report_error_and_exit("Digits both enabled and disabled")
-        }
-        if self.special && self.no_special {
-            self.report_error_and_exit("Special characters both enabled and disabled")
-        }
-        if let Some(num) = self.num {
-            if num < 1 {
-                self.report_error_and_exit("Too few passwords requested")
-            }
-        }
-        if let Some(length) = self.length {
-            if length < 1 {
-                self.report_error_and_exit("Too short a passwords requested")
-            }
-        }
-
-        if let Some(replacement) = &self.replacement {
-            if replacement.len() < 1 {
-                self.report_error_and_exit("Empty replacement special characters list")
-            }
-        }
-        for extra in &self.extra {
-            if extra.len() < 1 {
-                self.report_error_and_exit("Empty extra special characters list")
-            }
-        }
+    }
+    
+    pub fn new() -> Self {
+        let mut cmd = command!()
+            // TODO: Report bug
+            // .name(
+            //     env!("CARGO_BIN_NAME")) // Workaround for render_help bug
+            .disable_version_flag(true)
+            .arg(arg!(lower: -l "Use lower case letters (default)")
+                .action(ArgAction::SetTrue)
+                .group("low"))
+            .arg(arg!(no_lower: -L "Do NOT use lower case letters")
+                .action(ArgAction::SetTrue)
+                .group("low"))
+            .arg(arg!(upper: -u "Use upper case letters (default)")
+                .action(ArgAction::SetTrue)
+                .group("up"))
+            .arg(arg!(no_upper: -U "Do NOT use upper case letters")
+                .action(ArgAction::SetTrue)
+                .group("up"))
+            .arg(arg!(digits: -d "Use digits (default)")
+                .action(ArgAction::SetTrue)
+                .group("dig"))
+            .arg(arg!(no_digits: -D "Do NOT use digits")
+                .action(ArgAction::SetTrue)
+                .group("dig"))
+            .arg(arg!(special: -s "Use special characters !$%@#")
+                .action(ArgAction::SetTrue)
+                .group("sp1"))
+            .arg(arg!(no_special: -S "Do NOT use special characters")
+                .action(ArgAction::SetTrue)
+                .groups(["sp1", "sp2"]))
+            .arg(arg!(extra: -x <chars> ... "Extra special characters, implies -s")
+                .value_parser(no_empty_strings!("Empty extra special characters list"))
+                .group("sp2"))
+            .arg(arg!(replacement: -r <chars> "Replacement special characters, implies -s")
+                .value_parser(no_empty_strings!("Empty replacement special characters list"))
+                .group("sp2"))
+            .arg(arg!(all: -a "Password must conain chars of all classes")
+                .action(ArgAction::SetTrue))
+            .arg(arg!(num: -n <num> "Generate number of passwords")
+                .default_value(DEFAULT_NUM)
+                .value_parser(value_parser!(u8)
+                .range(1..128)))
+            .arg(arg!(quiet: -q "Quiet output, doesn't affect anithing as of yet") // Do not output anything but the password(s)
+                .action(ArgAction::SetTrue))
+            .arg(arg!(length: <length> "Password length")
+                .default_value(DEFAULT_LENGTH)
+                .required(false)
+                .value_parser(value_parser!(u8)
+                .range(1..128)))
+            .styles(Styles::default().clone()
+                .error(NOP)
+                .invalid(NOP)
+                .literal(NOP)
+                .placeholder(NOP)
+                .usage(NOP)
+                .valid(NOP)
+                .header(NOP))
+            .help_template("\
+                {before-help}\
+                {usage-heading}{usage}\n\n\
+                {about}\n\n\
+                {all-args}{after-help}")
+            .override_usage(format!(
+                "\n  {} [-h] [-l | -L] [-u | -U] [-d | -D] [-s | -S | -r <chars> | -x <chars>] [-a] [-n <num>] [-q] [length]",
+                env!("CARGO_BIN_NAME"),
+                ))
+            ;
+        let err = cmd.error(ErrorKind::ArgumentConflict, "{}");
+        let matches = cmd.get_matches();
         let req = Requset{
-            lower: self.lower || if self.no_lower { false } else { DEFAULTS.lower },
-            upper: self.upper || if self.no_upper { false } else { DEFAULTS.upper },
-            digits: self.digits || if self.no_digits { false } else { DEFAULTS.digits },
-            special: self.combine_special(),
-            all: self.all || DEFAULTS.all,
-            num: if let Some(num) = self.num { num } else { DEFAULTS.num },
-            quiet: self.quiet || DEFAULTS.quiet,
-            length: if let Some(length) = self.length { length } else { DEFAULTS.length },
+            lower: Self::get_dual_bool_match(&matches, "lower", &DEFAULT_LOWER),
+            upper: Self::get_dual_bool_match(&matches, "upper", &DEFAULT_UPPER),
+            digits: Self::get_dual_bool_match(&matches, "digits", &DEFAULT_DIGITS),
+            special: Self::combine_special(&matches),
+            all: Self::get_single_match(&matches, "all", &DEFAULT_ALL),
+            num: usize::from(Self::get_single_match::<u8>(
+                &matches, "num",
+                &DEFAULT_NUM.parse::<u8>().unwrap())),
+            quiet: Self::get_single_match(&matches, "quiet", &DEFAULT_QUIET),
+            length: usize::from(Self::get_single_match::<u8>(
+                &matches, "length",
+                &DEFAULT_LENGTH.parse::<u8>().unwrap())),
+            err: err,
         };
         if !req.lower && !req.upper && !req.digits && req.special.is_none() {
-            self.report_error_and_exit("All character classes are off")
+            req.brag_and_exit("All character classes are off");
         }
         req
     }
 
-    fn combine_special(&self) -> Option<String> {
-        // -S
-        if self.no_special {
-            return None
-        }
-        // neither -s, -r nor -x
-        if !self.special && self.replacement.is_none() && self.extra.is_empty()  {
-            return None
-        }
-        let special = 
-            if let Some(replacement) = &self.replacement {
-                replacement.clone()
-            } else {
-                DEFAULT_SPECIALS.to_owned()
-            };
-        let special = self.extra.iter().fold(
-            special, 
-            |acc, s| {
-                acc + s
-            },
-        );
-        let special = uniq(special);
-        Some(special)
+    pub fn brag_and_exit(&self, a_msg: &str) {
+        eprint!("{}", self.err.render().to_string().replace("{}", a_msg));
+        std::process::exit(1);
     }
 }

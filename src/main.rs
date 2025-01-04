@@ -1,15 +1,12 @@
 use std::iter::repeat;
 
-use argh::TopLevelCommand;
 use iwgenpass::GenPass;
 
 mod args;
-use args::Args;
+use args::Requset;
 
 fn main() {
-    let args: Args = argh::from_env();
-
-    let req = args.check();
+    let req = Requset::new();
     let mut gp = GenPass::new();
     if req.digits {
         gp.add_interval('0', '9');
@@ -20,7 +17,7 @@ fn main() {
     if req.upper {
         gp.add_interval('A', 'Z');
     }
-    if let Some(special) = req.special {
+    if let Some(ref special) = req.special {
         gp.add_list(&special);
     }
 
@@ -37,7 +34,7 @@ fn main() {
                 }
                 .unwrap_or_else(
                     |msg| {
-                        args.report_error_and_exit(&msg);
+                        req.brag_and_exit(&msg);
                         String::new()
                     }
                 )
@@ -45,15 +42,6 @@ fn main() {
         )
         .collect::<Vec<_>>()
         .join("\n");
+    // TODO: Print trailing newline only if writing to a terminal
     println!("{}", passwords)
-
-    // let mut gp = GenPass::new();
-    // gp.add_interval('0', '9');
-    // gp.add_interval('a', 'z');
-    // gp.add_interval('A', 'Z');
-    // gp.add_list("!$%@#");
-    // println!("{:?}", gp.generate(4));
-    // println!("{:?}", gp.generate(16));
-    // println!("{:?}", gp.generate_all(4));
-    // println!("{:?}", gp.generate_all(16));
 }
