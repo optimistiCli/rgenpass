@@ -1,4 +1,18 @@
-use clap::{arg, command, value_parser, ArgAction, ArgMatches};
+use clap::{
+    command, 
+    arg, 
+    value_parser, 
+    ArgAction, 
+    ArgMatches, 
+    builder::styling::Styles, 
+    Error,
+    error::{
+        ContextKind, 
+        ContextValue, 
+        ErrorKind
+    }, 
+};
+use clap_cargo::style::NOP;
 use iwrtb::{uniq, Braggard};
 
 const DEFAULT_LOWER: bool = true;
@@ -58,10 +72,13 @@ impl Requset {
         } else if let Some(replacement) = a_matches.get_one::<String>("replacement") {
             Some(uniq(replacement))
         } else if let Some(extra) = a_matches.get_many::<String>("extra") {
-            Some(uniq(&extra
-                .map(|s| s.chars())
-                .flatten()
-                .collect::<String>()))
+            let mut combined = String::from(DEFAULT_SPECIALS);
+            combined.extend(
+                    extra.map(
+                        |s| 
+                            s.chars())
+                .flatten());
+            Some(uniq(&combined))
         } else if *a_matches.get_one::<bool>("special").unwrap() {
             Some(DEFAULT_SPECIALS.to_owned())
         } else {
@@ -71,6 +88,8 @@ impl Requset {
     
     pub fn new() -> Self {
         let mut cmd = command!()
+            .name(
+                env!("CARGO_BIN_NAME")) // Workaround for render_help bug
             .arg(arg!(lower: -l "Use lower case letters (default)")
                 .action(ArgAction::SetTrue)
                 .group("low"))
@@ -114,13 +133,27 @@ impl Requset {
                 .required(false)
                 .value_parser(value_parser!(u8)
                 .range(1..128)))
-            // .help_template("\
-            //     {before-help}{about}\n\n\
-            //     {usage-heading}\n  {bin} {usage}\n\n\
-            //     {all-args}{after-help}")
+            .styles(Styles::default().clone()
+                .error(NOP)
+                .invalid(NOP)
+                .literal(NOP)
+                .placeholder(NOP)
+                .usage(NOP)
+                .valid(NOP)
+                .header(NOP))
+            .help_template("\
+                {before-help}{about}\n\n\
+                {usage-heading}\n  {usage}\n\n\
+                {all-args}{after-help}")
             // .override_usage("[-l | -L]")
             ;
             let help = cmd.render_help().ansi().to_string();
+
+            let mut err = Error::new(ErrorKind::ValueValidation).with_cmd(&cmd);
+            err.insert(ContextKind::InvalidArg, ContextValue::String("--foo".to_owned()));
+            err.insert(ContextKind::InvalidValue, ContextValue::String("bar".to_owned()));
+            println!(">>>\n{}\n<<<", err);
+
             let matches = cmd.get_matches();
 
         let req = Requset{
